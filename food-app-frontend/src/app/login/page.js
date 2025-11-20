@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ZuunIcon } from "../_icons/ZuunIcon";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,6 +14,7 @@ export default function LoginPage() {
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(email);
   const passOk = pass.length >= 6;
   const formOk = emailOk && passOk;
+
   const handleLogin = async (e) => {
     e.preventDefault();
     if (!formOk) {
@@ -29,36 +31,27 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email, password: pass }),
       });
-      console.log(email, pass);
+
       const raw = await res.text();
       let data = null;
       try {
         data = JSON.parse(raw);
       } catch {}
-
-      if (!res.ok) {
-        if (res.status === 400 || /email/i.test(raw)) {
-          setErrEmail(
-            data?.message ||
-              "Invalid email. Use a format like example@gmail.com."
-          );
-        } else if (res.status === 401 || /password/i.test(raw)) {
-          setErrPass(data?.message || "Incorrect password. Please try again.");
-        } else if (res.status === 404) {
-          setErrEmail("Invalid email. Use a format like example@gmail.com.");
-        } else {
-          setErrPass(
-            data?.message || `Server error (${res.status}). Please try again.`
-          );
-        }
-        return;
-      }
       const token = data?.token;
+      const userId = data?.user?._id;
+      const userEmail = data?.user?.email || email;
+
       if (!token) {
         setErrPass("No token returned from server.");
         return;
       }
-      localStorage.setItem("token", token);
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem("token", token);
+        if (userId) localStorage.setItem("user_id", userId);
+        if (userEmail) localStorage.setItem("user_email", userEmail);
+      }
+
       router.push("/");
     } catch (err) {
       console.error(err);
@@ -67,13 +60,16 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen  bg-white">
-      <div className="mx-auto max-w-md px-4 py-6 mt-60">
+    <main className="min-h-screen bg-white flex justify-center items-center gap-25">
+      <div className="w-100">
         <button
           className="grid h-10 w-10 place-items-center rounded-lg border border-gray-200 text-xl"
           aria-label="Back"
+          onClick={() => {
+            router.push("/");
+          }}
         >
-          ‹
+          <ZuunIcon />
         </button>
 
         <h1 className="mt-6 text-2xl font-extrabold text-neutral-900">
@@ -105,7 +101,7 @@ export default function LoginPage() {
               <p className="mt-2 text-[15px] text-red-600">{errEmail}</p>
             )}
           </div>
-          <div>
+          <div className="relative">
             <input
               type="password"
               value={pass}
@@ -131,6 +127,9 @@ export default function LoginPage() {
             <a
               className="text-neutral-800 underline underline-offset-4 text-sm"
               href="#"
+              onClick={() => {
+                router.push("/signup/res-pass");
+              }}
             >
               Forgot password ?
             </a>
@@ -150,11 +149,20 @@ export default function LoginPage() {
 
           <p className="text-center text-gray-500">
             Don’t have an account?
-            <a className="ml-2 font-medium text-blue-600" href="#">
+            <a
+              className="ml-2 font-medium text-blue-600 underline"
+              href="#"
+              onClick={() => {
+                router.push("/signup");
+              }}
+            >
               Sign up
             </a>
           </p>
         </form>
+      </div>
+      <div>
+        <img src="/Login.png" alt="Login" className="w-250 h-250" />
       </div>
     </main>
   );

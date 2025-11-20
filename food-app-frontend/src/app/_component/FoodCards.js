@@ -11,18 +11,19 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useState } from "react";
-// import { useCart } from "@/lib/cart-store";
 
 export const FoodCards = ({ dish, isSelected }) => {
-  // const { add } = useCart();
   const [open, setOpen] = useState(false);
   const [qty, setQty] = useState(1);
+  const [selected, setSelected] = useState(false);
 
   const price = Number(dish?.price) || 0;
   const total = (price * qty).toFixed(2);
 
   const imgSrc =
     dish?.image && dish.image.trim().length > 0 ? dish.image : "/User.jpg";
+
+  const active = selected || isSelected;
 
   return (
     <>
@@ -40,17 +41,16 @@ export const FoodCards = ({ dish, isSelected }) => {
               <DialogTrigger asChild>
                 <Button
                   type="button"
-                  variant="outline"
                   className={[
-                    "absolute right-6  h-14 w-14 rounded-full grid place-items-center shadow-lg",
-                    isSelected
-                      ? "bg-black text-white"
-                      : "bg-white text-red-500",
+                    "absolute right-6 mt-38 h-14 w-14 rounded-full grid place-items-center shadow-lg",
+                    active ? "bg-black text-white" : "bg-white text-red-500",
                   ].join(" ")}
-                  aria-label={isSelected ? "Selected" : "Add"}
-                  onClick={() => setOpen(false)}
+                  aria-label={active ? "Selected" : "Add"}
+                  onClick={() => {
+                    setOpen(false);
+                  }}
                 >
-                  {isSelected ? <Check size={22} /> : <Plus size={22} />}
+                  {active ? <Check size={22} /> : <Plus size={22} />}
                 </Button>
               </DialogTrigger>
               <DialogContent className="p-4 rounded-2xl">
@@ -94,11 +94,14 @@ export const FoodCards = ({ dish, isSelected }) => {
                         </button>
                       </div>
                     </div>
-
                     <Button
                       type="button"
                       onClick={() => {
-                        add(dish, qty);
+                        window.dispatchEvent(
+                          new CustomEvent("cart:add", { detail: { dish, qty } })
+                        );
+                        setSelected(true);
+                        setOpen(false);
                         setQty(1);
                       }}
                       className="w-full rounded-full bg-neutral-900 text-white hover:opacity-90"

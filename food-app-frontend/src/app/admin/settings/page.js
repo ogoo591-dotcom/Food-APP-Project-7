@@ -10,7 +10,13 @@ export default function Home() {
   return (
     <div className="w-[1440px] h-[1024px] m-auto bg-gray-100 flex flex-wrap  mt-10 gap-3">
       <div className="h-[1024px] w-[204px] bg-white gap-10 py-9 flex flex-col">
-        <Logo3Icon />
+        <button
+          onClick={() => router.push("/")}
+          aria-label="Go home"
+          className="shrink-0"
+        >
+          <Logo3Icon />
+        </button>
         <button
           onClick={() => router.push("/admin")}
           aria-label="Go home"

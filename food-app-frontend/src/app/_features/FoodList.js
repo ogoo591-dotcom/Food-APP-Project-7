@@ -5,6 +5,7 @@ import { FoodCards } from "../_component/FoodCards";
 export default function FoodList() {
   const [cats, setCats] = useState([]);
   const [cart, setCart] = useState([]);
+
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [byCat, setByCat] = useState({});
   const [flash, setFlash] = useState(null);

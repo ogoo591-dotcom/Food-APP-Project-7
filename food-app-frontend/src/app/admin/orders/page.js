@@ -17,7 +17,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 
-const STATUS_PILLS = ["http://localhost:4000/foodOrder"];
+const STATUS_PILLS = ["pending", "delivered", "cancelled"];
 
 export default function Home() {
   const router = useRouter();
@@ -31,18 +31,53 @@ export default function Home() {
   const [status, setStatus] = useState("Delivered");
 
   const orderData = async () => {
-    const data = await fetch("http://localhost:4000/foodOrder");
-    const jsonData = await data.json();
-    setOrder(jsonData);
-  };
+    try {
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
-  useEffect(() => {
-    orderData();
-  }, []);
+      const res = await fetch("http://localhost:4000/foodOrder", {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (!res.ok) {
+        console.error("Failed to load orders:", res.status);
+        setOrder([]);
+        return;
+      }
+
+      const jsonData = await res.json();
+      console.log("ADMIN ORDERS:", jsonData);
+      setOrder(Array.isArray(jsonData) ? jsonData : []);
+    } catch (e) {
+      console.error("Order fetch error:", e);
+      setOrder([]);
+    }
+  };
 
   useEffect(() => {
     setTotalPages(1);
   }, [order]);
+
+  const updateOrderStatus = async (id, newStatus) => {
+    await fetch(`http://localhost:4000/foodOrder/${id}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus }),
+    });
+
+    setOrder((prev) =>
+      prev.map((o) =>
+        String(o._id) === String(id) ? { ...o, status: newStatus } : o
+      )
+    );
+  };
+
+  const handleRowStatus = (newStatus, id) => {
+    updateOrderStatus(id, newStatus);
+  };
 
   const toggleOne = (id) =>
     setSelectedIds((prev) =>
@@ -89,14 +124,6 @@ export default function Home() {
 
   const getId = (o) => String(o._id ?? o.id);
 
-  const handleRowStatus = (newStatus, id) => {
-    setOrder((prev) =>
-      prev.map((o) =>
-        getId(o) === String(id) ? { ...o, status: newStatus } : o
-      )
-    );
-  };
-
   const handlePrevious = () => setPage((p) => Math.max(p - 1, 1));
   const handleNext = () => setPage((p) => Math.min(p + 1, totalPages));
   const handlePageClick = (page) => setPage(page);
@@ -107,7 +134,13 @@ export default function Home() {
   return (
     <div className="w-[1440px] h-[1024px] m-auto bg-gray-100 flex flex-wrap  mt-10 gap-3">
       <div className="h-[1024px] w-[204px] bg-white gap-10 py-9 flex flex-col">
-        <Logo3Icon />
+        <button
+          onClick={() => router.push("/")}
+          aria-label="Go home"
+          className="shrink-0"
+        >
+          <Logo3Icon />
+        </button>
         <button
           onClick={() => router.push("/admin")}
           aria-label="Go home"

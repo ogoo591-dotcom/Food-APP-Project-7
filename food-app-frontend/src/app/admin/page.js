@@ -65,7 +65,7 @@ export default function Home() {
       </div>
       <div className="w-[1170px] h-auto flex flex-col gap-5  overflow-auto">
         <img className="w-9 h-9 rounded-full ml-280 mt-5" src="./User.jpg" />
-        <CategoryCards categories={categories} categoryData={setCategories} />
+        <CategoryCards categories={categories} categoryData={categoryData} />
         {categories.map((category) => (
           <FoodsByCategory
             key={category._id}

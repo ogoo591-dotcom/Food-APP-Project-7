@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 import { CategoryList } from "../_component/CategoryList";
 import { toast } from "sonner";
 
-export default function CategoryCards({ categories, setCategories }) {
-  const [items, setItems] = useState(categories || setCategories || []);
-  const [name, setName] = useState("");
+export default function CategoryCards({ categories, categoryData }) {
+  const [items, setItems] = useState(categories || categoryData || []);
+  const [categoryName, setCategoryName] = useState("");
   const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
@@ -22,10 +22,10 @@ export default function CategoryCards({ categories, setCategories }) {
           "Content-Type": "application/json",
           accept: "application/json",
         },
-        body: JSON.stringify({ categoryName: name }),
+        body: JSON.stringify({ categoryName: categoryName }),
       });
-      await setCategories();
-      setName("");
+      categoryData();
+      setCategoryName("");
       setShowForm(false);
 
       toast("New Category is being added to the menu", {
@@ -41,11 +41,11 @@ export default function CategoryCards({ categories, setCategories }) {
         Dishes category
       </h3>
       <div className="flex flex-wrap items-center gap-4">
-        {items.map((cat, index) => (
+        {items.map((cat) => (
           <CategoryList
-            key={cat?._id ?? cat?.id ?? index}
-            name={cat?.categoryName}
-            count={cat?.food ?? cat?.foodsCount ?? 0}
+            key={cat?._id}
+            categoryName={cat?.categoryName}
+            foodCount={cat?.food ?? cat?.foodsCount ?? 0}
           />
         ))}
         <div className="space-y-4">
@@ -80,8 +80,8 @@ export default function CategoryCards({ categories, setCategories }) {
               <input
                 className="border w-100 h-10 mt-1 rounded-md px-3 outline-none"
                 placeholder="Type category name..."
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={categoryName}
+                onChange={(e) => setCategoryName(e.target.value)}
               />
             </div>
             <button

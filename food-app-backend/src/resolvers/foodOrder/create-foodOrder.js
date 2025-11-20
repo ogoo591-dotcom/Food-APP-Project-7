@@ -7,7 +7,7 @@ export const createFoodOrder = async (req, res) => {
   try {
     const foodOrder = await foodOrderModel.create({
       user: newFoodOrder.user,
-      toralPrice: newFoodOrder.totalPrice,
+      totalPrice: newFoodOrder.totalPrice,
       foodOrderItems: newFoodOrder.foodOrderItems,
       status: newFoodOrder.status,
       createdAt: newFoodOrder.createdAt,
