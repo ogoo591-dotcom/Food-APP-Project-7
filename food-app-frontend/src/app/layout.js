@@ -4,6 +4,7 @@ import { ThemeProvider } from "next-themes";
 import { CartProvider } from "@/lib/cart-store";
 import { Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "./_context/authContext";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({
@@ -22,14 +23,16 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
-        <Suspense>
-          <ThemeProvider enableSystem attribute="class" defaultTheme="system">
-            <CartProvider>
-              <main>{children}</main>
-              <Toaster />
-            </CartProvider>
-          </ThemeProvider>
-        </Suspense>
+        <AuthProvider>
+          <Suspense>
+            <ThemeProvider enableSystem attribute="class" defaultTheme="system">
+              <CartProvider>
+                <main>{children}</main>
+                <Toaster />
+              </CartProvider>
+            </ThemeProvider>
+          </Suspense>
+        </AuthProvider>
       </body>
     </html>
   );

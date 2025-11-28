@@ -17,9 +17,15 @@ export default function OrderDetails({ foodId, count = 0 }) {
         const res = await fetch(`http://localhost:4000/foodOrder/${foodId}`, {
           cache: "no-store",
         });
+
+        if (!res.ok) {
+          setErr("Failed to load items");
+          return;
+        }
         const data = await res.json();
 
         const raw = data?.foodOrderItems || data?.items || [];
+
         const norm = raw.map((it) => ({
           id: String(it._id ?? it.id ?? Math.random()),
           name: it.food?.foodName ?? it.foodName ?? "Unknown",
@@ -83,7 +89,7 @@ export default function OrderDetails({ foodId, count = 0 }) {
                       alt="image"
                       className="h-16 w-16 rounded-l object-cover"
                     />
-                    <span className="text-l">{it.foodName}</span>
+                    <span className="text-l">{it.name}</span>
                   </div>
                   <span className="text-l pr-1">x {it.qty}</span>
                 </li>

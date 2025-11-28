@@ -17,29 +17,37 @@ export default function LoginPage() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+
     if (!formOk) {
       if (!emailOk)
         setErrEmail("Invalid email. Use a format like example@gmail.com");
       if (!passOk) setErrPass("Incorrect password. Please try again.");
       return;
     }
+
     setErrEmail("");
     setErrPass("");
+
     try {
       const res = await fetch("http://localhost:4000/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email, password: pass }),
+        body: JSON.stringify({ email, password: pass }),
       });
 
-      const raw = await res.text();
-      let data = null;
-      try {
-        data = JSON.parse(raw);
-      } catch {}
+      if (!res.ok) {
+        const msg = await res.text();
+        setErrPass(msg || "Invalid email or password.");
+        return;
+      }
+
+      const data = await res.json();
+
       const token = data?.token;
-      const userId = data?.user?._id;
-      const userEmail = data?.user?.email || email;
+      const userId =
+        data?.user?._id ?? data?.userId ?? data?._id ?? data?.id ?? null;
+
+      const userEmail = data?.user?.email || data?.email || email;
 
       if (!token) {
         setErrPass("No token returned from server.");
@@ -48,7 +56,9 @@ export default function LoginPage() {
 
       if (typeof window !== "undefined") {
         localStorage.setItem("token", token);
-        if (userId) localStorage.setItem("user_id", userId);
+
+        if (userId) localStorage.setItem("user_id", String(userId));
+
         if (userEmail) localStorage.setItem("user_email", userEmail);
       }
 

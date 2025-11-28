@@ -16,5 +16,4 @@ export const getFoodCategory = async (req, res) => {
   );
 
   res.status(200).json(categories);
-  console.log("hahaha", categories);
 };

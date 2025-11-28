@@ -7,17 +7,10 @@ import { SettingIcon } from "../../_icons/Setting";
 import { FoodIcon } from "@/app/_icons/FoodMenu";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import { ZuunIcon } from "@/app/_icons/ZuunIcon";
+import { BaruunIcon } from "@/app/_icons/BaruunIcon";
 
-const STATUS_PILLS = ["pending", "delivered", "cancelled"];
+const STATUS_PILLS = ["PENDING", "CANCELLED", "DELIVERED"];
 
 export default function Home() {
   const router = useRouter();
@@ -29,6 +22,10 @@ export default function Home() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [status, setStatus] = useState("Delivered");
+  const pageSize = 10;
+
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   const orderData = async () => {
     try {
@@ -50,6 +47,9 @@ export default function Home() {
 
       const jsonData = await res.json();
       console.log("ADMIN ORDERS:", jsonData);
+      const sorted = (Array.isArray(jsonData) ? jsonData : []).sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
       setOrder(Array.isArray(jsonData) ? jsonData : []);
     } catch (e) {
       console.error("Order fetch error:", e);
@@ -58,21 +58,87 @@ export default function Home() {
   };
 
   useEffect(() => {
-    setTotalPages(1);
+    orderData();
+  }, []);
+
+  useEffect(() => {
+    if (!order.length) {
+      setFromDate("");
+      setToDate("");
+      return;
+    }
+
+    const dates = order
+      .map((o) => o.createdAt)
+      .filter(Boolean)
+      .map((d) => new Date(d));
+
+    const minDate = new Date(Math.min(...dates));
+    const maxDate = new Date(Math.max(...dates));
+
+    const toInput = (d) => d.toISOString().slice(0, 10);
+
+    setFromDate(toInput(minDate));
+    setToDate(toInput(maxDate));
   }, [order]);
 
-  const updateOrderStatus = async (id, newStatus) => {
-    await fetch(`http://localhost:4000/foodOrder/${id}/status`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus }),
-    });
+  const filteredOrders = useMemo(() => {
+    if (!Array.isArray(order)) return [];
 
-    setOrder((prev) =>
-      prev.map((o) =>
-        String(o._id) === String(id) ? { ...o, status: newStatus } : o
-      )
-    );
+    if (!fromDate && !toDate) {
+      return order;
+    }
+
+    const fromTs = fromDate ? new Date(fromDate).setHours(0, 0, 0, 0) : null;
+    const toTs = toDate ? new Date(toDate).setHours(23, 59, 59, 999) : null;
+
+    return order.filter((o) => {
+      if (!o.createdAt) return false;
+
+      const t = new Date(o.createdAt).getTime();
+      if (Number.isNaN(t)) return false;
+
+      if (fromTs !== null && t < fromTs) return false;
+      if (toTs !== null && t > toTs) return false;
+
+      return true;
+    });
+  }, [order, fromDate, toDate]);
+
+  useEffect(() => {
+    const tp = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
+    setTotalPages(tp);
+    if (page > tp) setPage(tp);
+  }, [filteredOrders, page]);
+
+  const updateOrderStatus = async (id, newStatus) => {
+    try {
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+      const res = await fetch(`http://localhost:4000/foodOrder/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        console.error("Update status failed:", res.status, err);
+        return;
+      }
+
+      setOrder((prev) =>
+        prev.map((o) =>
+          String(o._id) === String(id) ? { ...o, status: newStatus } : o
+        )
+      );
+    } catch (e) {
+      console.error("Update status error:", e);
+    }
   };
 
   const handleRowStatus = (newStatus, id) => {
@@ -91,13 +157,18 @@ export default function Home() {
   const toggleAll = () =>
     setSelectedIds((prev) => (prev.length === allIds.length ? [] : allIds));
 
-  const handleSaveStatus = () => {
-    setOrder((prev) =>
-      prev.map((o) => (selectedIds.includes(o._id) ? { ...o, status } : o))
-    );
+  const handleSaveStatus = async () => {
+    await Promise.all(selectedIds.map((id) => updateOrderStatus(id, status)));
+
     setSelectedIds([]);
     setShowModal(false);
   };
+
+  const paginatedOrders = useMemo(
+    () => filteredOrders.slice((page - 1) * pageSize, page * pageSize),
+    [filteredOrders, page]
+  );
+
   const getPageNumbers = () => {
     const pages = [];
     if (totalPages <= 5) {
@@ -121,13 +192,11 @@ export default function Home() {
     }
     return pages;
   };
-
-  const getId = (o) => String(o._id ?? o.id);
-
   const handlePrevious = () => setPage((p) => Math.max(p - 1, 1));
   const handleNext = () => setPage((p) => Math.min(p + 1, totalPages));
   const handlePageClick = (page) => setPage(page);
 
+  const getId = (o) => String(o._id ?? o.id);
   const count = selectedIds.length;
   const canChange = count > 0;
 
@@ -173,21 +242,33 @@ export default function Home() {
               <h2 className="font-bold text-xl">Orders</h2>
               <p className="text-l">{order.length} items</p>
             </div>
+
             <div className="flex items-center gap-3 border border-gray-200 rounded-full px-4 py-2 bg-white text-[12px]">
               <input
                 type="date"
-                name="date"
+                name="date_from"
+                value={fromDate}
+                onChange={(e) => {
+                  setFromDate(e.target.value);
+                  setPage(1);
+                }}
                 className="appearance-none bg-transparent text-neutral-900 focus:outline-none
-               [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                           [&::-webkit-calendar-picker-indicator]:cursor-pointer"
               />
               <span className="text-neutral-400">-</span>
               <input
                 type="date"
                 name="date_to"
+                value={toDate}
+                onChange={(e) => {
+                  setToDate(e.target.value);
+                  setPage(1);
+                }}
                 className="appearance-none bg-transparent text-neutral-900 focus:outline-none
-               [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                          [&::-webkit-calendar-picker-indicator]:cursor-pointer"
               />
             </div>
+
             <button
               disabled={!canChange}
               onClick={() => setShowModal(true)}
@@ -228,52 +309,59 @@ export default function Home() {
               <CancelledIcon />
             </button>
           </div>
-          {order.map((ord, index) => (
+          {paginatedOrders.map((ord, index) => (
             <OrderCards
               key={getId(ord)}
               id={getId(ord)}
-              index={index + 1}
+              index={(page - 1) * pageSize + index + 1}
               customer={ord.user}
               foods={ord.foodOrderItems}
               date={ord.createdAt}
               total={ord.totalPrice}
-              status={ord.status || "Pending"}
+              status={ord.status || "PENDING"}
               checked={selectedIds.includes(getId(ord))}
               onToggle={() => toggleOne(getId(ord))}
               onChangeStatus={handleRowStatus}
+              address={ord.deliveryAddress}
             />
           ))}
         </div>
+        <div className=" flex flex-row justify-end items-center gap-2 mt-5">
+          <button
+            onClick={handlePrevious}
+            disabled={page === 1}
+            className="flex justify-center items-center gap-2 px-2 py-1 rounded disabled:opacity-50 cursor-pointer"
+          >
+            <ZuunIcon />
+          </button>
 
-        <Pagination className={`flex justify-end mt-5`}>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious href="#" onClick={handlePrevious} />
-            </PaginationItem>
-            {getPageNumbers().map((p, i) =>
-              p === "..." ? (
-                <PaginationItem key={`e-${i}`}>
-                  <PaginationEllipsis />
-                </PaginationItem>
-              ) : (
-                <PaginationItem key={p}>
-                  <PaginationLink
-                    href="#"
-                    onClick={() => handlePageClick(p)}
-                    className={`border rounded-full ${
-                      p === page ? "bg-black text-white" : ""
-                    }`}
-                  >
-                    {p}
-                  </PaginationLink>
-                </PaginationItem>
-              )
-            )}
-            <PaginationItem>
-              <PaginationNext href="#" onClick={handleNext} />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
+          {getPageNumbers().map((p, i) =>
+            p === "..." ? (
+              <span key={`ellipsis-${i}`} className="px-2">
+                ...
+              </span>
+            ) : (
+              <button
+                key={`page-${p}`}
+                onClick={() => handlePageClick(p)}
+                className={` ${
+                  page === p
+                    ? "h-9 w-9 flex justify-center items-center border rounded-full bg-white cursor-pointer hover:bg-gray-500"
+                    : "h-9 w-9  rounded-full cursor-pointer hover:bg-gray-500"
+                }`}
+              >
+                {p}
+              </button>
+            )
+          )}
+          <button
+            onClick={handleNext}
+            disabled={page === totalPages}
+            className="flex justify-center items-center gap-2 px-2 py-1 rounded disabled:opacity-50 cursor-pointer"
+          >
+            <BaruunIcon />
+          </button>
+        </div>
       </div>
       {showModal && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/30">
@@ -288,17 +376,17 @@ export default function Home() {
               </button>
             </div>
 
-            <div className="mb-8 flex flex-wrap gap-4">
+            <div className="mb-8 flex flex-wrap gap-6 justify-center">
               {STATUS_PILLS.map((p) => (
                 <button
                   key={p}
                   type="button"
                   onClick={() => setStatus(p)}
                   className={[
-                    "rounded-full border px-6 py-3 text-[15px] font-medium transition",
+                    "rounded-full border px-5 py-2 text-[13px] font-medium transition",
                     status === p
-                      ? "border-red-400 text-red-500 bg-white"
-                      : "border-neutral-200 text-neutral-800 bg-neutral-50 hover:border-neutral-300",
+                      ? "border-red-400 text-red-500 bg-red-100"
+                      : "border-none text-neutral-800 bg-neutral-200 hover:border-neutral-300",
                   ].join(" ")}
                 >
                   {p}
@@ -308,7 +396,7 @@ export default function Home() {
 
             <button
               onClick={handleSaveStatus}
-              className="w-full rounded-full bg-neutral-900 py-3.5 text-center text-white text-[18px] font-medium hover:opacity-90"
+              className="w-full rounded-full bg-neutral-900 py-2 text-center text-white text-[18px] font-medium hover:opacity-90"
             >
               Save
             </button>

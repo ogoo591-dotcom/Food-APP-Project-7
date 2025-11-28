@@ -12,8 +12,6 @@ export default function CategoryCards({ categories, categoryData }) {
     setItems(categories);
   }, [categories]);
 
-  console.log("dddddddd", items);
-
   const handleAddCategory = async () => {
     try {
       const res = await fetch("http://localhost:4000/foodCategory", {

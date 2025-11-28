@@ -6,6 +6,7 @@ const ObjectId = Schema.ObjectId;
 const FoodOrderSchema = new Schema(
   {
     user: { type: ObjectId, required: true, ref: "user" },
+    deliveryAddress: { type: String },
     totalPrice: Number,
     foodOrderItems: [
       {
@@ -18,6 +19,7 @@ const FoodOrderSchema = new Schema(
       enum: ["PENDING", "CANCELLED", "DELIVERED"],
       default: "PENDING",
     },
+    deliveryAddress: { type: String },
   },
   {
     timestamps: true,

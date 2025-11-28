@@ -4,6 +4,9 @@ import { FoodIcon } from "../../_icons/FoodMenu";
 import { Logo3Icon } from "../../_icons/Logo3";
 import { SettingIcon } from "../../_icons/Setting";
 import { useRouter } from "next/navigation";
+import { FaLocationDot } from "react-icons/fa6";
+import { FaPhoneVolume } from "react-icons/fa6";
+import { MdMarkEmailUnread } from "react-icons/md";
 
 export default function Home() {
   const router = useRouter();
@@ -38,10 +41,36 @@ export default function Home() {
           <p>Settings</p>
         </div>
       </div>
-      <div className="w-[1171px] h-[948px] mt-10 bg-white">
-        <img className="w-9 h-9 rounded-full ml-280" src="../User.jpg" />
+      <div className="w-[1171px] h-[948px]  ">
+        <img
+          className="w-9 h-9 rounded-full mt-5 mb-5 ml-280"
+          src="../User.jpg"
+        />
+        <div className="w-[1171px] h-[850px] p-10 gap-5 flex flex-col bg-white border rounded-xl">
+          <h1 className="font-bold text-xl">Холбоо барих</h1>
+          <div className="flex gap-3">
+            <FaLocationDot />
+            <div className="w-100 flex gap-2">
+              <h1 className="font-bold text-bold text-lg">Хаяг:</h1>
+              Улаанбаатар, Сүхбаатар дүүрэг, 1-р хороо, Нарны зам, Үндэсний соёл
+              амралтын хүрээлэн, 36б тоот, Юбикаб ХХК төв оффис
+            </div>
+          </div>{" "}
+          <div className="flex gap-3">
+            <FaPhoneVolume />
+            <span className="w-100 flex items-center gap-2 ">
+              <h1 className="font-bold text-bold text-lg">Утас:</h1> 7705 1616
+            </span>
+          </div>
+          <div className="flex gap-3">
+            <MdMarkEmailUnread />
+            <span className="w-100 flex items-center gap-2 ">
+              <h1 className="font-bold text-bold text-lg">И-мэйл:</h1>
+              support@nomnom.mn
+            </span>
+          </div>
+        </div>
       </div>
-      <div></div>
     </div>
   );
 }

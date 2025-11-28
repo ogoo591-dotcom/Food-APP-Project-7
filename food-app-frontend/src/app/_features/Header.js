@@ -233,7 +233,7 @@ export const Header = () => {
           onDec={dec}
           onRemove={removeOne}
           onCheckout={checkout}
-          initialLocation={address}
+          location={address}
           onLocationChange={(value) => {
             setAddress(value);
             if (typeof window !== "undefined") {

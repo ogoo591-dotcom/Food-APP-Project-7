@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { BiCart } from "react-icons/bi";
 import {
@@ -20,6 +20,17 @@ import {
 import { useRouter } from "next/navigation";
 import { CartSuccess } from "../_icons/CartSuccess";
 import { CartEmptyIcon } from "../_icons/CartEmptyIcon";
+import { AuthContext } from "../_context/authContext";
+
+const formatDate = (value) => {
+  if (!value) return "-";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "-";
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}/${m}/${day}`;
+};
 
 export default function AddToOrders({
   open,
@@ -29,76 +40,56 @@ export default function AddToOrders({
   setCart,
   onDec,
   onRemove,
-  initialLocation = "",
 }) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
-  const [location, setLocation] = useState(initialLocation);
+  const [location, setLocation] = useState("");
   const [locationError, setLocationError] = useState("");
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState("cart");
   const [orders, setOrders] = useState([]);
 
-  const formatOrderDate = (value) => {
-    if (!value) return "-";
-    const d = new Date(value);
-    if (Number.isNaN(d.getTime())) return "-";
-    return d.toISOString().slice(0, 10);
-  };
+  const router = useRouter();
+  const { token, user } = useContext(AuthContext);
+  console.log("useruser", user);
 
-  useEffect(() => {
+  const loadOrders = async () => {
     if (typeof window === "undefined") return;
-    const token = localStorage.getItem("token");
-    setIsLoggedIn(!!token);
-    setLocation(initialLocation || "");
-  }, [initialLocation]);
+    if (!token || !user?._id || !open) {
+      setOrders([]);
+      return;
+    }
+    try {
+      const res = await fetch("http://localhost:4000/foodOrder", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-  useEffect(() => {
-    const loadOrders = async () => {
-      if (typeof window === "undefined") return;
-
-      const token = localStorage.getItem("token");
-      const userId = localStorage.getItem("user_id");
-
-      if (!token || !userId || !open) {
+      if (!res.ok) {
+        console.error("Failed to load orders", res.status);
         setOrders([]);
         return;
       }
 
-      try {
-        const res = await fetch("http://localhost:4000/foodOrder", {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
+      const all = await res.json();
+      console.log("ALL ORDERS:", all);
 
-        if (!res.ok) {
-          console.error("Failed to load orders", res.status);
-          setOrders([]);
-          return;
-        }
+      const mine = (Array.isArray(all) ? all : []).filter((o) => {
+        const id = o.user && (o.user._id || o.user);
+        return String(id) === String(user._id);
+      });
 
-        const all = await res.json();
-        const mine = Array.isArray(all)
-          ? all.filter(
-              (o) =>
-                String(o.user) === String(userId) ||
-                String(o.user?._id) === String(userId)
-            )
-          : [];
-
-        setOrders(mine);
-      } catch (e) {
-        console.error("Order fetch error", e);
-        setOrders([]);
-      }
-    };
-
+      setOrders(mine);
+    } catch (e) {
+      console.error("Order fetch error", e);
+      setOrders([]);
+    }
+  };
+  useEffect(() => {
     loadOrders();
-  }, [open]);
+  }, [open, token, user?._id]);
 
   const itemsTotal = useMemo(
     () =>
@@ -108,39 +99,33 @@ export default function AddToOrders({
       ),
     [cart]
   );
-  const shipping = useMemo(
-    () => (itemsTotal > 0 ? +(itemsTotal * 0.1).toFixed(2) : 0),
-    [itemsTotal]
-  );
+
+  const shipping = 6000;
   const grandTotal = useMemo(
     () => +(itemsTotal + shipping).toFixed(2),
     [itemsTotal, shipping]
   );
 
+  useEffect(() => {
+    if (user?.address && !location) {
+      setLocation(user.address);
+    }
+  }, [user, location]);
+
   const checkout = async () => {
     if (!cart.length) return;
 
-    if (typeof window === "undefined") return;
-    const token = localStorage.getItem("token");
-    const userId = localStorage.getItem("user_id");
-
-    if (!token || !userId) {
+    if (!token || !user?._id) {
       setShowLoginDialog(true);
       return;
     }
+
     if (!location.trim()) {
       setLocationError("Please write your delivery address.");
       setActiveTab("cart");
       return;
     }
-    const body = {
-      ...(userId ? { user: userId } : {}),
-      totalPrice: grandTotal,
-      foodOrderItems: cart.map((it) => ({
-        food: it._id,
-        quantity: it.qty || 1,
-      })),
-    };
+
     try {
       const res = await fetch("http://localhost:4000/foodOrder", {
         method: "POST",
@@ -148,7 +133,15 @@ export default function AddToOrders({
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          user: user._id,
+          totalPrice: grandTotal,
+          foodOrderItems: cart.map((it) => ({
+            food: it._id,
+            quantity: it.qty || 1,
+          })),
+          deliveryAddress: location,
+        }),
       });
 
       if (!res.ok) {
@@ -157,13 +150,13 @@ export default function AddToOrders({
         return;
       }
 
-      const saved = await res.json();
-
-      setOrders((prev) => [saved, ...(prev || [])]);
-
       setCart([]);
       localStorage.removeItem("cart_items");
       localStorage.setItem("cart_badge", "0");
+
+      await loadOrders();
+
+      setActiveTab("orders");
       setShowSuccessDialog(true);
     } catch (e) {
       console.error("Order create error:", e);
@@ -217,7 +210,7 @@ export default function AddToOrders({
                         </div>
                       ) : (
                         <>
-                          <div className="space-y-5 border-dashed">
+                          <div className="space-y-5 border-dashed ">
                             {cart.map((it, i) => (
                               <div
                                 key={
@@ -292,12 +285,6 @@ export default function AddToOrders({
                               onChange={(e) => {
                                 setLocation(e.target.value);
                                 if (locationError) setLocationError("");
-                                if (typeof window !== "undefined") {
-                                  localStorage.setItem(
-                                    "delivery_address",
-                                    e.target.value
-                                  );
-                                }
                               }}
                             />
                             {locationError && (
@@ -336,7 +323,7 @@ export default function AddToOrders({
                           </p>
                         </div>
                       ) : (
-                        <div className="mt-4 space-y-6">
+                        <div className="space-y-4">
                           {orders.map((ord, index) => {
                             const price = Number(ord.totalPrice) || 0;
                             const shortId =
@@ -346,63 +333,89 @@ export default function AddToOrders({
                                 ? ord.id.slice(-5)
                                 : "";
 
-                            const dateStr = ord.createdAt
-                              ? new Date(ord.createdAt)
-                                  .toISOString()
-                                  .slice(0, 10)
-                              : "–";
+                            const foods = Array.isArray(ord.foodOrderItems)
+                              ? ord.foodOrderItems
+                              : [];
 
-                            const itemCount = Array.isArray(ord.foodOrderItems)
-                              ? ord.foodOrderItems.reduce(
-                                  (s, it) => s + (it.qty || it.quantity || 1),
-                                  0
-                                )
-                              : 0;
+                            const address =
+                              ord.deliveryAddress ||
+                              ord.user?.address ||
+                              "No address";
+
+                            const status = ord.status || "PENDING";
+                            const statusClasses =
+                              status === "DELIVERED"
+                                ? "border-0 bg-neutral-100 text-neutral-900"
+                                : status === "CANCELLED"
+                                ? "border-red-300 text-red-500 bg-red-50"
+                                : "border-red-300 text-red-500 bg-white";
 
                             return (
                               <div
                                 key={String(ord._id ?? ord.id ?? index)}
-                                className="rounded-2xl border border-dashed px-4 py-3 flex flex-col gap-2"
+                                className="rounded-2xl bg-white"
                               >
-                                <div className="flex items-center justify-between">
-                                  <p className="text-lg font-semibold">
-                                    {price.toFixed(2)} ₮
-                                    {shortId && (
-                                      <span className="ml-1 text-sm text-neutral-500">
-                                        #{shortId}
-                                      </span>
-                                    )}
-                                  </p>
+                                <div className="flex items-start justify-between">
+                                  <div className="space-y-1">
+                                    <p className="text-xl font-semibold text-neutral-900">
+                                      {price.toFixed(2)} ₮{" "}
+                                      {shortId && (
+                                        <span className="text-sm text-neutral-500">
+                                          (#{shortId})
+                                        </span>
+                                      )}
+                                    </p>
+                                  </div>
 
-                                  <span className="rounded-full border border-red-300 px-4 py-1 text-xs font-medium text-red-500">
-                                    {ord.status || "PENDING"}
+                                  <span
+                                    className={`inline-flex items-center rounded-full border px-4 py-1 text-xs font-medium ${statusClasses}`}
+                                  >
+                                    {status.charAt(0) +
+                                      status.slice(1).toLowerCase()}
                                   </span>
                                 </div>
 
-                                <div className="text-xs text-neutral-600">
-                                  {Array.isArray(ord.foodOrderItems) &&
-                                    ord.foodOrderItems.map((it, i) => (
+                                <div className="mt-3 space-y-2 text-sm text-neutral-600">
+                                  {foods.map((it, i) => {
+                                    const name =
+                                      it.food?.foodName ??
+                                      it.foodName ??
+                                      "Food item";
+                                    const qty = it.qty || it.quantity || 1;
+                                    return (
                                       <div
                                         key={String(it._id ?? it.food ?? i)}
-                                        className="flex justify-between"
+                                        className="flex items-center justify-between"
                                       >
-                                        <span>{it.name || "Food item"}</span>
-                                        <span>
-                                          x {it.qty || it.quantity || 1}
+                                        <div className="flex items-center gap-2">
+                                          <span aria-hidden>🍽️</span>
+                                          <span>{name}</span>
+                                        </div>
+                                        <span className="text-xs text-neutral-500">
+                                          x {qty}
                                         </span>
                                       </div>
-                                    ))}
-                                  {itemCount === 0 && <span>–</span>}
+                                    );
+                                  })}
+
+                                  {foods.length === 0 && (
+                                    <p className="text-xs text-neutral-400">
+                                      No items.
+                                    </p>
+                                  )}
+
+                                  <div className="flex items-center gap-2 pt-2">
+                                    <span aria-hidden>⏱</span>
+                                    <span>{formatDate(ord.createdAt)}</span>
+                                  </div>
+
+                                  <div className="flex items-center gap-2">
+                                    <span aria-hidden>📍</span>
+                                    <span className="truncate">{address}</span>
+                                  </div>
                                 </div>
 
-                                <div className="pt-2 text-xs text-neutral-500">
-                                  <p>{dateStr}</p>
-                                  <p className="line-clamp-1">
-                                    {ord.deliveryAddress ||
-                                      ord.user?.address ||
-                                      "No address"}
-                                  </p>
-                                </div>
+                                <div className="mt-4 border-t border-dashed" />
                               </div>
                             );
                           })}
@@ -447,6 +460,7 @@ export default function AddToOrders({
           </div>
         </div>
       </SheetContent>
+
       <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
         <DialogContent className="max-w-md rounded-2xl">
           <DialogHeader>
