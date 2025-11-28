@@ -266,10 +266,9 @@ export const FoodsByCategory = ({ categoryId, categoryName }) => {
                       </p>
 
                       <div className="relative w-64 h-64">
-                        <Image
+                        <img
                           src={logoUrl}
                           alt="Uploaded logo"
-                          fill
                           className="object-contain rounded border border-gray-300"
                         />
                       </div>
@@ -396,10 +395,9 @@ export const FoodsByCategory = ({ categoryId, categoryName }) => {
                       </p>
 
                       <div className="relative w-64 h-64">
-                        <Image
+                        <img
                           src={image}
                           alt="Uploaded logo"
-                          fill
                           className="object-contain rounded border border-gray-300"
                         />
                       </div>

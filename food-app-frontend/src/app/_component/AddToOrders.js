@@ -320,8 +320,9 @@ export default function AddToOrders({
                             No Orders Yet?
                           </p>
                           <p className="max-w-md text-xs text-neutral-500">
-                            🍕 &quot;You haven't placed any orders yet. Start
-                            exploring our menu and satisfy your cravings!&quot;
+                            {
+                              "🍕 You haven't placed any orders yet. Start exploring our menu and satisfy your cravings!"
+                            }
                           </p>
                         </div>
                       ) : (
