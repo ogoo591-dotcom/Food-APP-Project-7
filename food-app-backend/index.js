@@ -8,7 +8,7 @@ import { foodCategories } from "./src/routes/foodCategory.js";
 import { authentication } from "./src/routes/auth.js";
 
 const app = express();
-const PORT = 4000;
+const PORT = 8000;
 
 app.use(cors());
 app.use(express.json());
