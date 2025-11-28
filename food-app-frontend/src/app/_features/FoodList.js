@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FoodCards } from "../_component/FoodCards";
 
+const backend_url = process.env.PUBLIC_BACKEND_URL;
+
 export default function FoodList() {
   const [cats, setCats] = useState([]);
   const [cart, setCart] = useState([]);
@@ -14,13 +16,13 @@ export default function FoodList() {
   useEffect(() => {
     (async () => {
       try {
-        const rc = await fetch("http://localhost:4000/foodCategory");
+        const rc = await fetch(`${backend_url}/foodCategory`);
         const categories = await rc.json();
         setCats(categories);
 
         const foodsArrays = await Promise.all(
           categories.map((c) =>
-            fetch(`http://localhost:4000/food/category/${c._id}`)
+            fetch(`${backend_url}/food/category/${c._id}`)
               .then((r) => r.json())
               .catch(() => [])
           )

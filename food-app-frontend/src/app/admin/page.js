@@ -10,12 +10,14 @@ import { useEffect, useState } from "react";
 import { FoodsByCategory } from "../_features/FoodsByCategory";
 import { useRouter } from "next/navigation";
 
+const backend_url = process.env.PUBLIC_BACKEND_URL;
+
 export default function Home() {
   const router = useRouter();
   const [categories, setCategories] = useState([]);
 
   const categoryData = async () => {
-    const data = await fetch("http://localhost:4000/foodCategory");
+    const data = await fetch(`${backend_url}/foodCategory`);
     const jsonData = await data.json();
     setCategories(jsonData);
   };

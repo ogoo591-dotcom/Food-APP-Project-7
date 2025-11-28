@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { CategoryList } from "../_component/CategoryList";
 import { toast } from "sonner";
 
+const backend_url = process.env.PUBLIC_BACKEND_URL;
+
 export default function CategoryCards({ categories, categoryData }) {
   const [items, setItems] = useState(categories || categoryData || []);
   const [categoryName, setCategoryName] = useState("");
@@ -14,7 +16,7 @@ export default function CategoryCards({ categories, categoryData }) {
 
   const handleAddCategory = async () => {
     try {
-      const res = await fetch("http://localhost:4000/foodCategory", {
+      const res = await fetch(`${backend_url}/foodCategory`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

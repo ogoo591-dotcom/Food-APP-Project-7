@@ -11,6 +11,7 @@ import { ZuunIcon } from "@/app/_icons/ZuunIcon";
 import { BaruunIcon } from "@/app/_icons/BaruunIcon";
 
 const STATUS_PILLS = ["PENDING", "CANCELLED", "DELIVERED"];
+const backend_url = process.env.PUBLIC_BACKEND_URL;
 
 export default function Home() {
   const router = useRouter();
@@ -32,7 +33,7 @@ export default function Home() {
       const token =
         typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
-      const res = await fetch("http://localhost:4000/foodOrder", {
+      const res = await fetch(`${backend_url}/foodOrder`, {
         headers: {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -116,7 +117,7 @@ export default function Home() {
       const token =
         typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
-      const res = await fetch(`http://localhost:4000/foodOrder/${id}`, {
+      const res = await fetch(`${backend_url}/foodOrder/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

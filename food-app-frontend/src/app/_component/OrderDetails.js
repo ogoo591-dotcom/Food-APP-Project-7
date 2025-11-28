@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { SumIcon } from "../_icons/Sum";
 
+const backend_url = process.env.PUBLIC_BACKEND_URL;
+
 export default function OrderDetails({ foodId, count = 0 }) {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState([]);
@@ -14,7 +16,7 @@ export default function OrderDetails({ foodId, count = 0 }) {
       try {
         setLoading(true);
         setErr("");
-        const res = await fetch(`http://localhost:4000/foodOrder/${foodId}`, {
+        const res = await fetch(`${backend_url}/foodOrder/${foodId}`, {
           cache: "no-store",
         });
 

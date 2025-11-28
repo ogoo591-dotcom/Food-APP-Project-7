@@ -2,6 +2,8 @@
 
 import { createContext, useEffect, useState } from "react";
 
+const backend_url = process.env.PUBLIC_BACKEND_URL;
+
 export const AuthContext = createContext({});
 
 export const AuthProvider = ({ children }) => {
@@ -10,7 +12,7 @@ export const AuthProvider = ({ children }) => {
 
   const getUser = async (localToken) => {
     try {
-      const rawData = await fetch("http://localhost:4000/auth", {
+      const rawData = await fetch(`${backend_url}/auth`, {
         method: "GET",
         headers: {
           Authorization: `${localToken}`,

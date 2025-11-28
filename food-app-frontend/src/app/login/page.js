@@ -3,6 +3,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ZuunIcon } from "../_icons/ZuunIcon";
 
+const backend_url = process.env.PUBLIC_BACKEND_URL;
+
 export default function LoginPage() {
   const router = useRouter();
 
@@ -29,7 +31,7 @@ export default function LoginPage() {
     setErrPass("");
 
     try {
-      const res = await fetch("http://localhost:4000/auth", {
+      const res = await fetch(`${backend_url}/auth`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password: pass }),

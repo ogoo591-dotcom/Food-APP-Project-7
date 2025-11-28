@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 const UPLOAD_PRESET = "food-app";
 const CLOUD_NAME = "dou1av6jm";
+const backend_url = process.env.PUBLIC_BACKEND_URL;
 
 export const FoodsByCategory = ({ categoryId, categoryName }) => {
   const [menu, setMenu] = useState([]);
@@ -24,16 +25,14 @@ export const FoodsByCategory = ({ categoryId, categoryName }) => {
   const [edit, setEdit] = useState(null);
 
   const menuData = async () => {
-    const data = await fetch(
-      `http://localhost:4000/food/category/${categoryId}`
-    );
+    const data = await fetch(`${backend_url}/food/category/${categoryId}`);
     const jsonData = await data.json();
     setMenu(jsonData);
     console.log(setMenu);
   };
 
   const loadCategories = async () => {
-    const r = await fetch("http://localhost:4000/foodCategory");
+    const r = await fetch(`${backend_url}/foodCategory`);
     const data = await r.json();
     setCategories(data);
   };
@@ -79,7 +78,7 @@ export const FoodsByCategory = ({ categoryId, categoryName }) => {
 
   const handleAddDish = async () => {
     try {
-      const res = await fetch(`http://localhost:4000/food`, {
+      const res = await fetch(`${backend_url}/food`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -121,7 +120,7 @@ export const FoodsByCategory = ({ categoryId, categoryName }) => {
 
   const handleSaveEdit = async () => {
     try {
-      const r = await fetch(`http://localhost:4000/food/${edit._id}`, {
+      const r = await fetch(`${backend_url}/food/${edit._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -146,7 +145,7 @@ export const FoodsByCategory = ({ categoryId, categoryName }) => {
     try {
       if (!edit?._id) return;
 
-      const r = await fetch(`http://localhost:4000/food/${edit._id}`, {
+      const r = await fetch(`${backend_url}/food/${edit._id}`, {
         method: "DELETE",
       });
       if (!r.ok) throw new Error("Delete failed");

@@ -3,6 +3,8 @@ import { ZuunIcon } from "@/app/_icons/ZuunIcon";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+const backend_url = process.env.PUBLIC_BACKEND_URL;
+
 export default function PasswordPage() {
   const router = useRouter();
 
@@ -51,7 +53,7 @@ export default function PasswordPage() {
 
     let tokenFromServer = "";
     try {
-      const res = await fetch("http://localhost:4000/users", {
+      const res = await fetch(`${backend_url}/users`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

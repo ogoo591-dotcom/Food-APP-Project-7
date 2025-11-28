@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 
+const backend_url = process.env.PUBLIC_BACKEND_URL;
+
 export default function LocationHere({
   open,
   onClose,
@@ -25,7 +27,7 @@ export default function LocationHere({
     localStorage.setItem("delivery_address", value);
     if (saveToServer && userId) {
       try {
-        await fetch(`http://localhost:4000/user/${userId}/address`, {
+        await fetch(`${backend_url}/user/${userId}/address`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ address: value }),

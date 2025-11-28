@@ -32,6 +32,8 @@ const formatDate = (value) => {
   return `${y}/${m}/${day}`;
 };
 
+const backend_url = process.env.PUBLIC_BACKEND_URL;
+
 export default function AddToOrders({
   open,
   onOpenChange,
@@ -60,7 +62,7 @@ export default function AddToOrders({
       return;
     }
     try {
-      const res = await fetch("http://localhost:4000/foodOrder", {
+      const res = await fetch(`${backend_url}/foodOrder`, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -127,7 +129,7 @@ export default function AddToOrders({
     }
 
     try {
-      const res = await fetch("http://localhost:4000/foodOrder", {
+      const res = await fetch(`${backend_url}/foodOrder`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
