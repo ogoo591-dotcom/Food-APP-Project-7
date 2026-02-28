@@ -5,16 +5,19 @@ import { CancelledIcon } from "../../_icons/Cancelled";
 import { Logo3Icon } from "../../_icons/Logo3";
 import { SettingIcon } from "../../_icons/Setting";
 import { FoodIcon } from "@/app/_icons/FoodMenu";
-import { useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ZuunIcon } from "@/app/_icons/ZuunIcon";
 import { BaruunIcon } from "@/app/_icons/BaruunIcon";
+import { AuthContext } from "@/app/_context/authContext";
 
 const STATUS_PILLS = ["PENDING", "CANCELLED", "DELIVERED"];
 const backend_url = process.env.PUBLIC_BACKEND_URL;
 
 export default function Home() {
   const router = useRouter();
+  const { user } = useContext(AuthContext);
+  const avatarText = (user?.email || "U").charAt(0).toUpperCase();
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -61,6 +64,18 @@ export default function Home() {
   useEffect(() => {
     orderData();
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+    if (user && user.role !== "ADMIN") {
+      router.replace("/");
+    }
+  }, [user, router]);
 
   useEffect(() => {
     if (!order.length) {
@@ -233,10 +248,9 @@ export default function Home() {
         </button>
       </div>
       <div className="w-[1171px] h-[948px]  ">
-        <img
-          className="w-9 h-9 rounded-full mt-5 mb-5 ml-280"
-          src="../User.jpg"
-        />
+        <div className="ml-280 mt-5 mb-5 h-9 w-9 rounded-full bg-neutral-200 text-neutral-700 grid place-items-center text-sm font-semibold">
+          {avatarText}
+        </div>
         <div className="w-[1171px] h-[850px]  bg-white border rounded-xl">
           <div className="w-full h-[60px] flex  items-center px-5 bg-white gap-10 text-sm  ">
             <div className="flex flex-col ml-15 w-100 justify-center">

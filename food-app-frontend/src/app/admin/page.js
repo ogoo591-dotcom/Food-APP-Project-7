@@ -6,15 +6,18 @@ import { SettingIcon } from "../_icons/Setting";
 import Link from "next/link";
 import { FoodIcon2 } from "../_icons/FoodMenu2";
 import CategoryCards from "../_features/CategoryCards";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { FoodsByCategory } from "../_features/FoodsByCategory";
 import { useRouter } from "next/navigation";
+import { AuthContext } from "../_context/authContext";
 
 const backend_url = process.env.PUBLIC_BACKEND_URL;
 
 export default function Home() {
   const router = useRouter();
   const [categories, setCategories] = useState([]);
+  const { user } = useContext(AuthContext);
+  const avatarText = (user?.email || "U").charAt(0).toUpperCase();
 
   const categoryData = async () => {
     const data = await fetch(`${backend_url}/foodCategory`);
@@ -27,11 +30,16 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("token");
-      if (!token) router.push("/login");
+    if (typeof window === "undefined") return;
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.replace("/login");
+      return;
     }
-  }, []);
+    if (user && user.role !== "ADMIN") {
+      router.replace("/");
+    }
+  }, [user, router]);
 
   return (
     <div className="w-[1440px] h-screen m-auto bg-gray-100 flex mt-10 gap-8 relative">
@@ -66,7 +74,9 @@ export default function Home() {
         </Link>
       </div>
       <div className="w-[1170px] h-auto flex flex-col gap-5  overflow-auto">
-        <img className="w-9 h-9 rounded-full ml-280 mt-5" src="./User.jpg" />
+        <div className="ml-270 mt-3 h-9 w-9 p-2 rounded-full bg-neutral-200 text-neutral-700 grid place-items-center text-sm font-semibold">
+          {avatarText}
+        </div>
         <CategoryCards categories={categories} categoryData={categoryData} />
         {categories.map((category) => (
           <FoodsByCategory

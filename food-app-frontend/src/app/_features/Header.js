@@ -6,9 +6,10 @@ import { LogoIcon } from "../_icons/Logo";
 import { NextIcon } from "../_icons/Next";
 import { UserIcon } from "../_icons/User";
 import LocationHere from "../_component/LocationHere";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { ShoppingCart } from "lucide-react";
 import AddToOrders from "../_component/AddToOrders";
+import { AuthContext } from "../_context/authContext";
 
 export const Header = () => {
   const router = useRouter();
@@ -24,6 +25,7 @@ export const Header = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -45,13 +47,6 @@ export const Header = () => {
       window.removeEventListener("storage", syncAuth);
     };
   }, []);
-  const clearAddress = () => {
-    setAddress("");
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("delivery_address");
-    }
-  };
-
   useEffect(() => {
     if (typeof window === "undefined") return;
     const savedItems = localStorage.getItem("cart_items");
@@ -112,6 +107,17 @@ export const Header = () => {
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!user?.address) return;
+    const cached = localStorage.getItem("delivery_address");
+    if (!cached) {
+      const next = String(user.address);
+      setAddress(next);
+      localStorage.setItem("delivery_address", next);
+    }
+  }, [user?.address]);
+
+  useEffect(() => {
     const total = cart.reduce((s, x) => s + (x.qty || 1), 0);
     setBadge(total);
     if (typeof window !== "undefined") {
@@ -164,6 +170,7 @@ export const Header = () => {
       localStorage.removeItem("token");
       localStorage.removeItem("user_email");
       localStorage.removeItem("delivery_address");
+      window.dispatchEvent(new Event("auth:changed"));
     }
 
     setIsLoggedIn(false);
@@ -173,6 +180,7 @@ export const Header = () => {
     router.push("/login");
   };
 
+  const displayAddress = address || user?.address || "";
   const truncate = (s, n = 28) => (s.length > n ? s.slice(0, n) + "…" : s);
 
   return (
@@ -190,10 +198,10 @@ export const Header = () => {
           className="flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:border-neutral-300"
         >
           <LocationIcon />
-          <span className="text-red-400">
+            <span className="text-red-400">
             Delivery address:
             <span className="ml-1 text-neutral-500">
-              {address ? truncate(address) : "Add Location"}
+              {displayAddress ? truncate(displayAddress) : "Add Location"}
             </span>
           </span>
           <NextIcon />
@@ -240,7 +248,6 @@ export const Header = () => {
               localStorage.setItem("delivery_address", value);
             }
           }}
-          onCheckoutSuccess={clearAddress}
         />
         {mounted &&
           (isLoggedIn ? (

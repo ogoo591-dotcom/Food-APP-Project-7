@@ -29,14 +29,26 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window === "undefined") return;
+
+    const syncAuth = () => {
       const localToken = localStorage.getItem("token");
       if (localToken) {
+        setToken(localToken);
         getUser(localToken);
-        return setToken(localToken);
+        return;
       }
-      return setToken("no token");
-    }
+      setToken("");
+      setUser(null);
+    };
+
+    syncAuth();
+    window.addEventListener("auth:changed", syncAuth);
+    window.addEventListener("storage", syncAuth);
+    return () => {
+      window.removeEventListener("auth:changed", syncAuth);
+      window.removeEventListener("storage", syncAuth);
+    };
   }, []);
 
   return (

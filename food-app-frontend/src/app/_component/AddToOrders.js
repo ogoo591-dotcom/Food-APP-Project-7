@@ -42,6 +42,8 @@ export default function AddToOrders({
   setCart,
   onDec,
   onRemove,
+  location: locationProp,
+  onLocationChange,
 }) {
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -54,6 +56,10 @@ export default function AddToOrders({
   const router = useRouter();
   const { token, user } = useContext(AuthContext);
   console.log("useruser", user);
+
+  const locationValue =
+    locationProp ??
+    (location || (user?.address ? String(user.address) : ""));
 
   const loadOrders = async () => {
     if (typeof window === "undefined") return;
@@ -108,12 +114,6 @@ export default function AddToOrders({
     [itemsTotal, shipping]
   );
 
-  useEffect(() => {
-    if (user?.address && !location) {
-      setLocation(user.address);
-    }
-  }, [user, location]);
-
   const checkout = async () => {
     if (!cart.length) return;
 
@@ -122,7 +122,7 @@ export default function AddToOrders({
       return;
     }
 
-    if (!location.trim()) {
+    if (!locationValue.trim()) {
       setLocationError("Please write your delivery address.");
       setActiveTab("cart");
       return;
@@ -142,7 +142,7 @@ export default function AddToOrders({
             food: it._id,
             quantity: it.qty || 1,
           })),
-          deliveryAddress: location,
+          deliveryAddress: locationValue,
         }),
       });
 
@@ -175,7 +175,7 @@ export default function AddToOrders({
                 <BiCart /> Order detail
               </SheetTitle>
               <button
-                className="ml-auto grid h-8 w-8 place-items-cente r rounded-full border-gray-300 border text-gray-300 "
+                className="ml-auto grid h-8 w-8 place-items-center rounded-full border-gray-300 border text-gray-300 "
                 onClick={() => onOpenChange?.(false)}
               >
                 ×
@@ -283,9 +283,10 @@ export default function AddToOrders({
                                   : "border-gray-300"
                               }`}
                               placeholder="Please complete your address"
-                              value={location}
+                              value={locationValue}
                               onChange={(e) => {
                                 setLocation(e.target.value);
+                                onLocationChange?.(e.target.value);
                                 if (locationError) setLocationError("");
                               }}
                             />

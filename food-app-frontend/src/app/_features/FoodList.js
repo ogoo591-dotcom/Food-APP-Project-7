@@ -24,8 +24,8 @@ export default function FoodList() {
           categories.map((c) =>
             fetch(`${backend_url}/food/category/${c._id}`)
               .then((r) => r.json())
-              .catch(() => [])
-          )
+              .catch(() => []),
+          ),
         );
 
         const map = {};
@@ -61,7 +61,7 @@ export default function FoodList() {
 
   const cartCount = useMemo(
     () => cart.reduce((s, x) => s + (x.qty || 1), 0),
-    [cart]
+    [cart],
   );
 
   if (loading) return <div className="p-6 text-neutral-500">Loading…</div>;

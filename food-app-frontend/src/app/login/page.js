@@ -62,6 +62,8 @@ export default function LoginPage() {
         if (userId) localStorage.setItem("user_id", String(userId));
 
         if (userEmail) localStorage.setItem("user_email", userEmail);
+
+        window.dispatchEvent(new Event("auth:changed"));
       }
 
       router.push("/");
